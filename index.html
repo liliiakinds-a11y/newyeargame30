@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8" />
+<title>ユニコーンジャンプ</title>
+<style>
+  body {
+    margin: 0;
+    overflow: hidden;
+    background: #ffeefc;
+    font-family: "Noto Sans JP", sans-serif;
+  }
+
+  #gameCanvas {
+    display: block;
+    margin: 0 auto;
+    background: linear-gradient(#d6eaff, #ffffff);
+    border: 3px solid #fff;
+  }
+
+  #startScreen, #clearScreen {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    background: rgba(255,255,255,0.8);
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    font-size: 28px;
+    text-align: center;
+  }
+
+  button {
+    margin-top: 20px;
+    padding: 12px 25px;
+    font-size: 22px;
+    border-radius: 10px;
+    border: none;
+    cursor: pointer;
+    background: #ff66c4;
+    color: white;
+  }
+</style>
+</head>
+<body>
+
+<div id="startScreen">
+  <h1>🎉ユニコーンジャンプ🎉</h1>
+  <p>2026年 あけましておめでとう！<br>10回ジャンプでクリアを目指そう！</p>
+  <button onclick="startGame()">スタート</button>
+</div>
+
+<div id="clearScreen" style="display:none;">
+  <h1>🎊 クリア！ 🎊</h1>
+  <p>10回ジャンプ達成！<br>今年もよろしくお願いします🐉✨</p>
+  <button onclick="location.reload()">もう一度</button>
+</div>
+
+<canvas id="gameCanvas" width="400" height="600"></canvas>
+
+<script>
+const canvas = document.getElementById("gameCanvas");
+const ctx = canvas.getContext("2d");
+
+// ★ここにユニコーン画像のURLを入れる
+const unicornImgURL = "https://postimg.cc/gallery/txvhf0z";  
+// ↑あとで CodePen の Assets にアップして、自分のURLに変えてね！
+
+const playerImg = new Image();
+playerImg.src = unicornImgURL;
+
+// プレイヤー
+let player = {
+  x: 200,
+  y: 500,
+  width: 50,
+  height: 50,
+  vy: 0
+};
+
+let gravity = 0.3;
+let jumpPower = -8;
+let platforms = [];
+let jumpCount = 0;
+let gameStarted = false;
+
+// プラットフォーム生成
+for (let i = 0; i < 6; i++) {
+  platforms.push({
+    x: Math.random() * 350,
+    y: i * 100
+  });
+}
+
+// ゲーム開始
+function startGame() {
+  document.getElementById("startScreen").style.display = "none";
+  gameStarted = true;
+  loop();
+}
+
+// クリック or タップでジャンプ
+document.addEventListener("mousedown", jump);
+document.addEventListener("touchstart", jump);
+
+function jump() {
+  if (!gameStarted) return;
+  player.vy = jumpPower;
+  jumpCount++;
+
+  // 10回でクリア
+  if (jumpCount >= 10) {
+    document.getElementById("clearScreen").style.display = "flex";
+  }
+}
+
+function loop() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  // 物理計算
+  player.vy += gravity;
+  player.y += player.vy;
+
+  // 画面上に戻す
+  if (player.y < 200) {
+    player.y = 200;
+
+    // プラットフォームを下に移動
+    for (let p of platforms) {
+      p.y += 3;
+      if (p.y > 600) {
+        p.y = 0;
+        p.x = Math.random() * 350;
+      }
+    }
+  }
+
+  // 描画：プレイヤー
+  ctx.drawImage(playerImg, player.x - 25, player.y - 25, 50, 50);
+
+  // プラットフォーム
+  ctx.fillStyle = "#9ce7ff";
+  for (let p of platforms) {
+    ctx.fillRect(p.x, p.y, 80, 10);
+
+    // 当たり判定
+    if (
+      player.vy > 0 &&
+      player.x > p.x - 20 &&
+      player.x < p.x + 80 &&
+      player.y + 25 > p.y &&
+      player.y + 25 < p.y + 20
+    ) {
+      player.vy = jumpPower;
+    }
+  }
+
+  // 落下 → やり直し
+  if (player.y > 650) {
+    location.reload();
+  }
+
+  requestAnimationFrame(loop);
+}
+</script>
+</body>
+</html>
